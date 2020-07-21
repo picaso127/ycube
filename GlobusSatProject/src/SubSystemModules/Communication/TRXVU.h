@@ -36,19 +36,7 @@ typedef enum __attribute__ ((__packed__)) _ISIStrxvuTransponderMode
 } ISIStrxvutransponderMode;
 
 /*!
- * @brief This is a replacement to all TX commaned, in order to activate the ground station simulation
- * @return
- */
-int IsisTrxvu_tcSendAX25DefClSign_alt(unsigned char index, unsigned char *data, unsigned char length, unsigned char *avail);
-
-/*!
- * @brief This is a replacement to all TX commaned, in order to activate the ground station simulation
- * @return
- */
-void getUartCommand(int* len, char* buffer);
-
-/*!
- * @brief Initializes data filed for transmission - semaphores, parameters from the FRAM
+ * @breif Initializes data filed for transmission - semaphores, parameters from the FRAM
  * @return
  */
 void InitTxModule();
