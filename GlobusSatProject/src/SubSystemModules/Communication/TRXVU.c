@@ -71,6 +71,27 @@ int CMD_SetBeaconInterval(sat_packet_t *cmd)
 }
 
 
+#define START_OF_PACKET_STRING "start of packet"
+#define END_OF_PACKET_STRING "end of packet"
+
+int IsisTrxvu_tcSendAX25DefClSign_alt(unsigned char index, unsigned char *data, unsigned char length, unsigned char *avail)
+{
+	fflush(stdout);
+	int ret = 0; //IsisTrxvu_tcSendAX25DefClSign(index,data,length,avail);
+	printf("%s",START_OF_PACKET_STRING);
+	fflush(stdout);
+	for(int i = 0;i<length;i++)
+	{
+		printf("%c",data[i]);
+	}
+	fflush(stdout);
+	printf("%s",END_OF_PACKET_STRING);
+	*avail = 15;
+	fflush(stdout);
+	return ret;
+}
+
+
 
 void InitBeaconParams()
 {
@@ -153,6 +174,43 @@ void checkTransponderFinish(){
 	}
 }
 
+void getUartCommand(int* len, char* buffer)
+{
+	*len=DBGU_GetChar();
+	if(*len!=254)
+	{
+		*len=-1;
+		return;
+	}
+	char temp='R';
+	//for(;;)
+	{
+		printf("%s%c%s",START_OF_PACKET_STRING,temp,END_OF_PACKET_STRING);
+		fflush(stdout);
+	}
+	*len=42;
+	int j=0;
+	while(!DBGU_IsRxReady())
+	{
+		j++;
+	}
+	*len=DBGU_GetChar();
+	for(int i =0; i < (*len);i++)
+	{
+		if(DBGU_IsRxReady())
+		{
+			buffer[i] = DBGU_GetChar();
+		}
+		else
+		{
+			i--;
+		}
+	}
+	int test5 =0;
+	test5++;
+}
+
+
 int TRX_Logic() {
 	int err = 0;
 	int cmdFound=-1;
@@ -160,7 +218,19 @@ int TRX_Logic() {
 	int frameCount = GetNumberOfFramesInBuffer();
 	sat_packet_t cmd = { 0 }; // holds the SPL command data
 
-	if (frameCount > 0) {
+
+	unsigned int dataBuffer_length;
+	byte dataBuffer[SIZE_RXFRAME];
+
+	if (frameCount > 0 || DBGU_IsRxReady()) {
+		if (DBGU_IsRxReady())
+		{
+			getUartCommand(&dataBuffer_length, dataBuffer);
+			if(dataBuffer_length == -1)
+			{
+				return command_succsess;
+			}
+		}
 		// we have data that came from grand station
 		cmdFound = GetOnlineCommand(&cmd); //--> check - don't reset WDT if we got error getting the frame becuase we will never get a reset !
 		ResetGroundCommWDT();
@@ -412,7 +482,7 @@ int TransmitSplPacket(sat_packet_t *packet, int *avalFrames) {
 		return E_GET_SEMAPHORE_FAILED;
 	}
 
-	err = IsisTrxvu_tcSendAX25DefClSign(ISIS_TRXVU_I2C_BUS_INDEX,
+	err = IsisTrxvu_tcSendAX25DefClSign_alt(ISIS_TRXVU_I2C_BUS_INDEX,
 			(unsigned char*) packet, data_length, (unsigned char*) avalFrames);
 
 #ifdef TESTING
